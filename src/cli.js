@@ -1,3 +1,6 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { readLocalToken } from "./session-store.js";
 
 const DEFAULT_SERVER = "http://127.0.0.1:4765";
@@ -133,7 +136,7 @@ async function writeJson(out, response) {
   out.write(`${text}\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replaceAll("\\", "/")}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   runCli(process.argv.slice(2)).then((code) => {
     process.exitCode = code;
   });

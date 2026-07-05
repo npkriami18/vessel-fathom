@@ -2,7 +2,6 @@
 name: fathom
 description: Verify live app interactions with the Fathom CLI. Use when an agent-built web app needs browser-observed evidence that buttons, forms, navigation, or declared data-fathom-expect behaviors actually work.
 argument-hint: [APP_URL_OR_ORIGIN]
-author: Kun Chen (kunchenguid)
 metadata:
   tags: [verification, testing, browser, ai-agent]
   category: developer-tools

@@ -7,7 +7,7 @@ feedback back to the coding agent. This project extends that loop to **live,
 multi-page, interactive applications**, where the thing being reviewed isn't just
 "does this look right" but "does clicking this actually do what it was supposed to?"
 
-A human still drives the browser and performs every interaction — nothing here
+A human still drives the browser and performs every interaction â€” nothing here
 automates clicking. The tool's job is to **observe, diff, classify, and flag**
 what happened after each interaction, so the human is triaging a short list of
 likely problems instead of hunting through the whole app for bugs.
@@ -32,39 +32,39 @@ likely problems instead of hunting through the whole app for bugs.
 
 - No automated clicking/scripting of the app (human-driven only).
 - No cross-browser test replay engine (that's a natural v2, not v1).
-- No requirement that every element have a declared intent — the system
+- No requirement that every element have a declared intent â€” the system
   should still be useful on an app with zero annotations, just with less
   precision.
 
 ## 3. High-level architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Human's browser                                             │
-│  ┌─────────────────────────────┐   ┌───────────────────────┐│
-│  │  App under review (iframe    │   │  Lavish Pro panel      ││
-│  │  or same-origin live page)   │   │  - Timeline            ││
-│  │  + injected Observer SDK     │◄──┤  - Notifications       ││
-│  │                               │   │  - Comment queue       ││
-│  └──────────────┬────────────────┘   └───────────┬───────────┘│
-│                 │ events (postMessage / direct)   │           │
-└─────────────────┼──────────────────────────────────┼───────────┘
-                  ▼                                  ▼
-        ┌───────────────────────────────────────────────────┐
-        │  Local Lavish Pro server (Node, localhost)         │
-        │  - Session store (keyed by app origin)             │
-        │  - Page graph                                      │
-        │  - Interaction log / timeline                      │
-        │  - Classifier + LLM judge                          │
-        │  - Comment queue                                   │
-        └───────────────────┬─────────────────────────────────┘
-                             │ CLI: `lavish poll` / `lavish notify`
-                             ▼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Human's browser                                             â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”â”‚
+â”‚  â”‚  App under review (iframe    â”‚   â”‚  Lavish Pro panel      â”‚â”‚
+â”‚  â”‚  or same-origin live page)   â”‚   â”‚  - Timeline            â”‚â”‚
+â”‚  â”‚  + injected Observer SDK     â”‚â—„â”€â”€â”¤  - Notifications       â”‚â”‚
+â”‚  â”‚                               â”‚   â”‚  - Comment queue       â”‚â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜â”‚
+â”‚                 â”‚ events (direct POST)   â”‚           â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                  â–¼                                  â–¼
+        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+        â”‚  Local Lavish Pro server (Node, localhost)         â”‚
+        â”‚  - Session store (keyed by app origin)             â”‚
+        â”‚  - Page graph                                      â”‚
+        â”‚  - Interaction log / timeline                      â”‚
+        â”‚  - Classifier + LLM judge                          â”‚
+        â”‚  - Comment queue                                   â”‚
+        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚ CLI: `lavish poll` / `lavish notify`
+                             â–¼
                      Coding agent (Claude Code, etc.)
 ```
 
 The server is the same shape as Lavish's today (local, file/state under
-`~/.lavish-pro/`, idle auto-shutdown) — it just tracks a session per **app
+`~/.lavish-pro/`, idle auto-shutdown) â€” it just tracks a session per **app
 origin** instead of per file path, since the human will move across pages.
 
 ## 4. Data model
@@ -97,7 +97,7 @@ The page graph is just a byproduct: an edge from `discoveredVia` to this node.
 Not load-bearing for v1, but cheap to keep and useful as documentation of the
 app's navigable surface.
 
-### 4.3 InteractionEvent (the core unit — the "timeline entry")
+### 4.3 InteractionEvent (the core unit â€” the "timeline entry")
 
 ```ts
 InteractionEvent {
@@ -126,7 +126,7 @@ Snapshot {
   url: string
   domHash: string          // cheap fingerprint for fast no-change detection
   domSubtreeDiff?: string  // populated only if domHash changed, computed lazily
-  screenshot: string       // local file ref, thumbnail + full
+  screenshot: string       // browser-captured visual evidence data URL
   pendingNetworkCalls: NetworkCallSummary[]  // captured in the settle window
   consoleErrors: string[]
 }
@@ -170,7 +170,7 @@ QueueItem {
 }
 ```
 
-## 5. Event schema (SDK → server wire format)
+## 5. Event schema (SDK â†’ server wire format)
 
 The injected Observer SDK posts a single message shape for every instrumented
 interaction:
@@ -188,6 +188,8 @@ interaction:
 }
 ```
 
+Screenshot note: inside the proxied iframe Fathom does not have browser-extension or CDP privileges for a true pixel framebuffer capture. The SDK stores a non-empty SVG `foreignObject` data URL of the bounded target region HTML as the visual snapshot fallback; it is evidence for the captured DOM state, not a guaranteed pixel-identical raster screenshot.
+
 The SDK is responsible for capturing `before` synchronously on
 `pointerdown`/`keydown` (before any handler runs), then waiting a **settle
 window** (default ~600ms, configurable, extended if network activity is
@@ -196,20 +198,20 @@ in-flight) before capturing `after` and posting the full event.
 ## 6. Classification pipeline
 
 1. **Fast path (no LLM):** compare `domHash` before/after, compare `url`
-   before/after, check if `networkCalls` is non-empty → gives `Outcome`
+   before/after, check if `networkCalls` is non-empty â†’ gives `Outcome`
    directly, cheap and deterministic.
 2. **Judgment path (LLM, only if `declaredIntent` is set):** send
    `{ declaredIntent, outcome, domSubtreeDiff, networkCalls }` to a small judge
    prompt, get back `Judgment`.
 3. **Notification scoring:**
-   - `declaredIntent` present + `outcome == no_change` → `severity: high`
+   - `declaredIntent` present + `outcome == no_change` â†’ `severity: high`
      (dead button), no LLM call needed to flag it, though the LLM judgment can
      still run for the human's context.
-   - `declaredIntent` present + `Judgment.verdict == mismatch` → `severity: likely`
+   - `declaredIntent` present + `Judgment.verdict == mismatch` â†’ `severity: likely`
    - No `declaredIntent`, but element is a button/link and `outcome == no_change`
-     → `severity: info` ("no expectation declared, but nothing happened —
+     â†’ `severity: info` ("no expectation declared, but nothing happened â€”
      worth checking?")
-   - Otherwise → no notification, entry just sits in the timeline.
+   - Otherwise â†’ no notification, entry just sits in the timeline.
 
 ## 7. Human-facing flow
 
@@ -219,10 +221,10 @@ in-flight) before capturing `after` and posting the full event.
 3. Flagged entries additionally surface in the **Notifications** feed, each
    with Approve / Dismiss / Comment-directly actions (see prior discussion).
 4. Approving auto-fills a queue comment from the template:
-   `"Expected {declaredIntent}, but observed {outcome}."` — editable before
+   `"Expected {declaredIntent}, but observed {outcome}."` â€” editable before
    queuing.
 5. Human can also click any timeline entry (flagged or not) at any time and
-   add a free-form comment, same mechanic — this is what makes it work even
+   add a free-form comment, same mechanic â€” this is what makes it work even
    after the human has navigated away from the page where it happened.
 6. Queue behaves exactly as it does in Lavish today: batched, editable, sent
    to the agent via `lavish poll`.
@@ -230,13 +232,13 @@ in-flight) before capturing `after` and posting the full event.
 ## 8. SDK responsibilities (injected into the app)
 
 - Attach capture-phase listeners for `click`, `submit`, `keydown` (Enter on
-  focused interactive elements) on `document`, not per-element — so it works
+  focused interactive elements) on `document`, not per-element â€” so it works
   without the app cooperating beyond adding `data-lavish-expect` attributes.
 - Compute `domHash` cheaply (e.g. a rolling hash over serialized outerHTML of
   a bounded region, not the whole document, to stay fast on large apps).
 - Buffer network calls via `fetch`/`XHR` monkey-patch during the settle
   window.
-- Strip all `data-lavish-*` attributes and remove itself cleanly on export —
+- Strip all `data-lavish-*` attributes and remove itself cleanly on export â€”
   same principle as today's Lavish, output must be identical to a
   non-instrumented run.
 
@@ -259,7 +261,7 @@ in-flight) before capturing `after` and posting the full event.
 1. Observer SDK: capture-phase listeners, domHash, screenshot, event posting.
 2. Local server: session store keyed by origin, timeline persistence,
    `poll`/`notify` CLI commands matching Lavish's existing interface shape.
-3. Fast-path classifier (no LLM) — ship this alone first, it's most of the
+3. Fast-path classifier (no LLM) â€” ship this alone first, it's most of the
    value.
 4. Timeline + Notifications UI panel.
 5. LLM judge pass, layered on top once the fast path is solid.

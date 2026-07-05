@@ -116,3 +116,14 @@ test("drainQueue returns unsent items once and marks them sent", async () => {
   assert.equal(second.length, 0);
   assert.equal(session?.queue[0].sent, true);
 });
+
+test("concurrent appendInteraction calls for one origin are serialized", async () => {
+  const store = await tempStore();
+  const events = Array.from({ length: 12 }, (_, index) => interaction({ id: `event-${index}`, selector: `#button-${index}` }));
+
+  await Promise.all(events.map((event) => store.appendInteraction("http://localhost:3000", event)));
+  const session = await store.read("http://localhost:3000");
+
+  assert.equal(session?.timeline.length, events.length);
+  assert.deepEqual(new Set(session?.timeline.map((event) => event.id)), new Set(events.map((event) => event.id)));
+});

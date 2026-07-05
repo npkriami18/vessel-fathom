@@ -86,7 +86,7 @@ export function parseJudgment(text) {
  * @param {{ apiKey?: string, fetch?: typeof fetch, enabled?: boolean }} [options]
  */
 export async function maybeJudgeEvent(event, options = {}) {
-  if (!options.enabled || !event.declaredIntent) return event;
+  if (!shouldJudge(event, options)) return event;
 
   const judgment = await judgeInteraction(
     {
@@ -110,4 +110,11 @@ export async function maybeJudgeEvent(event, options = {}) {
         elementKind: null
       })
   };
+}
+
+function shouldJudge(event, options) {
+  if (!event.declaredIntent) return false;
+  if (options.enabled === false || process.env.FATHOM_JUDGE === "0") return false;
+  if (options.enabled === true) return true;
+  return Boolean(options.apiKey ?? process.env.ANTHROPIC_API_KEY);
 }

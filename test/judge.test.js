@@ -75,3 +75,50 @@ test("maybeJudgeEvent attaches mismatch notification from judgment", async () =>
   assert.equal(judged.judgment.verdict, "mismatch");
   assert.equal(judged.notification.severity, "likely");
 });
+
+test("maybeJudgeEvent runs by default for declared intent when an API key is available", async () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+  const originalFlag = process.env.FATHOM_JUDGE;
+  process.env.ANTHROPIC_API_KEY = "test-key";
+  delete process.env.FATHOM_JUDGE;
+  try {
+    const event = {
+      declaredIntent: "navigates",
+      outcome: "dom_mutation",
+      after: { pendingNetworkCalls: [], domSubtreeDiff: "changed" },
+      notification: null
+    };
+    const judged = await maybeJudgeEvent(event, {
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            content: [{ type: "text", text: '{"verdict":"mismatch","reasoning":"Wrong panel changed","confidence":0.8}' }]
+          }),
+          { status: 200 }
+        )
+    });
+
+    assert.equal(judged.judgment.verdict, "mismatch");
+  } finally {
+    if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = originalKey;
+    if (originalFlag === undefined) delete process.env.FATHOM_JUDGE;
+    else process.env.FATHOM_JUDGE = originalFlag;
+  }
+});
+
+test("maybeJudgeEvent respects FATHOM_JUDGE=0 as an opt-out", async () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+  const originalFlag = process.env.FATHOM_JUDGE;
+  process.env.ANTHROPIC_API_KEY = "test-key";
+  process.env.FATHOM_JUDGE = "0";
+  try {
+    const event = { declaredIntent: "navigates", outcome: "dom_mutation", after: { pendingNetworkCalls: [] }, notification: null };
+    assert.equal(await maybeJudgeEvent(event), event);
+  } finally {
+    if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = originalKey;
+    if (originalFlag === undefined) delete process.env.FATHOM_JUDGE;
+    else process.env.FATHOM_JUDGE = originalFlag;
+  }
+});

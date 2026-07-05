@@ -41,14 +41,16 @@ body {
   border-bottom: 1px solid #e5e7eb;
 }
 .tabs button,
-.actions button {
+.actions button,
+.composer button {
   border: 0;
   background: #f7f8fa;
   padding: 9px 10px;
   cursor: pointer;
 }
 .tabs button:hover,
-.actions button:hover {
+.actions button:hover,
+.composer button:hover {
   background: #eceff3;
 }
 [data-view] {
@@ -62,6 +64,13 @@ body {
   padding: 10px;
   margin-bottom: 10px;
   background: white;
+}
+.event {
+  cursor: pointer;
+}
+.event:focus {
+  outline: 2px solid #4782d4;
+  outline-offset: 2px;
 }
 .event.high {
   border-color: #d44747;
@@ -93,6 +102,22 @@ body {
 }
 .actions button {
   flex: 1;
+  border-radius: 6px;
+}
+.composer {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.composer textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #cbd3df;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+}
+.composer button {
   border-radius: 6px;
 }
 .empty {

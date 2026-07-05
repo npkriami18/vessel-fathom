@@ -18,6 +18,7 @@ async function fixtureServer() {
   assert.equal(typeof address, "object");
   return {
     store,
+    token: await store.getToken(),
     baseUrl: `http://127.0.0.1:${address.port}`,
     close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
   };
@@ -30,7 +31,7 @@ test("toy app broken button produces high no_change notification", async () => {
     const domHash = hashString(html);
     const response = await fetch(`${fixture.baseUrl}/api/interactions`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-fathom-token": fixture.token },
       body: JSON.stringify({
         selector: "#broken-save",
         elementLabel: "Save cart",
@@ -58,7 +59,7 @@ test("toy app checkout navigation classifies as navigation", async () => {
     const afterHtml = await readFile(path.join("test", "fixtures", "toy-app", "confirm.html"), "utf8");
     const response = await fetch(`${fixture.baseUrl}/api/interactions`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-fathom-token": fixture.token },
       body: JSON.stringify({
         selector: "#checkout",
         elementLabel: "Checkout",

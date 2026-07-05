@@ -53,12 +53,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kunchenguid/vessel-fathom.git"
+    "url": "git+https://github.com/npkriami18/vessel-fathom.git"
   },
   "bugs": {
-    "url": "https://github.com/kunchenguid/vessel-fathom/issues"
+    "url": "https://github.com/npkriami18/vessel-fathom/issues"
   },
-  "homepage": "https://github.com/kunchenguid/vessel-fathom#readme",
+  "homepage": "https://github.com/npkriami18/vessel-fathom#readme",
   "publishConfig": {
     "access": "public"
   }

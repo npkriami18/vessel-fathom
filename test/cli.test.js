@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Writable } from "node:stream";
@@ -52,20 +52,42 @@ test("open posts a session request", async () => {
   assert.equal(JSON.parse(stdout.output).ok, true);
 });
 
-test("poll requests queue drain for an origin", async () => {
+test("poll posts queue drain for an origin with the local token", async () => {
   const stdout = new BufferStream();
   const calls = [];
   const code = await runCli(["poll", "http://localhost:3000"], {
     stdout,
-    fetch: async (url) => {
-      calls.push(url);
+    env: { FATHOM_TOKEN: "secret-token" },
+    fetch: async (url, options) => {
+      calls.push({ url, options });
       return response({ ok: true, queue: [], empty: true });
     }
   });
 
   assert.equal(code, 0);
-  assert.equal(calls[0], "http://127.0.0.1:4765/api/poll?origin=http%3A%2F%2Flocalhost%3A3000");
+  assert.equal(calls[0].url, "http://127.0.0.1:4765/api/poll");
+  assert.equal(calls[0].options.method, "POST");
+  assert.equal(calls[0].options.headers["x-fathom-token"], "secret-token");
+  assert.equal(JSON.parse(calls[0].options.body).origin, "http://localhost:3000");
   assert.equal(JSON.parse(stdout.output).empty, true);
+});
+
+test("poll reads token from the configured state dir", async () => {
+  const stdout = new BufferStream();
+  const stateDir = await mkdtemp(path.join(os.tmpdir(), "fathom-cli-token-"));
+  await writeFile(path.join(stateDir, "token"), "file-token\n", "utf8");
+  const calls = [];
+  const code = await runCli(["poll", "http://localhost:3000"], {
+    stdout,
+    env: { FATHOM_STATE_DIR: stateDir },
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return response({ ok: true, queue: [], empty: true });
+    }
+  });
+
+  assert.equal(code, 0);
+  assert.equal(calls[0].options.headers["x-fathom-token"], "file-token");
 });
 
 test("unknown commands fail with usage", async () => {
@@ -81,6 +103,7 @@ test("export posts a report request", async () => {
   const calls = [];
   const code = await runCli(["export", "http://localhost:3000"], {
     stdout,
+    env: { FATHOM_TOKEN: "secret-token" },
     fetch: async (url, options) => {
       calls.push({ url, options });
       return response({ ok: true, report: { jsonPath: "a.json", htmlPath: "a.html" } });
@@ -89,8 +112,10 @@ test("export posts a report request", async () => {
 
   assert.equal(code, 0);
   assert.equal(calls[0].url, "http://127.0.0.1:4765/api/export");
+  assert.equal(calls[0].options.headers["x-fathom-token"], "secret-token");
   assert.equal(JSON.parse(calls[0].options.body).origin, "http://localhost:3000");
 });
+
 test("setup hooks installs slash-command files", async () => {
   const stdout = new BufferStream();
   const home = await mkdtemp(path.join(os.tmpdir(), "fathom-cli-home-"));

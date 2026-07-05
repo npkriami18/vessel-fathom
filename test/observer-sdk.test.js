@@ -39,7 +39,7 @@ test("element helpers extract selector, label, kind, and declared intent", () =>
   assert.equal(declaredIntentFor(element), "navigates");
 });
 
-test("captureSnapshot hashes the nearest fathom region", () => {
+test("captureSnapshot hashes the nearest fathom region and captures visual data", () => {
   const region = new FakeElement(
     "section",
     { "data-fathom-region": "cart", outerHTML: "<section data-fathom-region='cart'>A</section>" },
@@ -55,4 +55,6 @@ test("captureSnapshot hashes the nearest fathom region", () => {
 
   assert.equal(snapshot.url, "http://localhost:3000/cart");
   assert.equal(snapshot.domHash, hashString(region.outerHTML));
+  assert.match(snapshot.screenshot, /^data:image\/svg\+xml/);
+  assert.match(decodeURIComponent(snapshot.screenshot), /data-fathom-region/);
 });

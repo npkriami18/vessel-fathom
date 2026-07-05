@@ -14,18 +14,36 @@ import { canonicalOrigin, SessionStore } from "./session-store.js";
 const DEFAULT_PORT = 4765;
 const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const ROOT_DIR = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const MUTATING_ROUTES = [
+  ["POST", /^\/api\/interactions$/],
+  ["POST", /^\/api\/comments$/],
+  ["POST", /^\/api\/notifications\/[^/]+\/(?:approve|dismiss)$/],
+  ["POST", /^\/api\/poll$/],
+  ["POST", /^\/api\/export$/],
+  ["POST", /^\/api\/end$/]
+];
 
 /**
- * @param {{ store?: SessionStore }} [options]
+ * @param {{ store?: SessionStore, judgeEvent?: typeof maybeJudgeEvent }} [options]
  */
 export function createApp(options = {}) {
   const app = express();
   const store = options.store ?? new SessionStore();
+  const judgeEvent = options.judgeEvent ?? maybeJudgeEvent;
 
   app.use(express.json({ limit: "1mb" }));
+  app.use(authenticateMutations(store));
 
   app.get("/health", (_request, response) => {
     response.json({ ok: true, name: "fathom" });
+  });
+
+  app.get("/api/token", async (_request, response, next) => {
+    try {
+      response.json({ ok: true, token: await store.getToken() });
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.get("/chrome", (request, response) => {
@@ -49,7 +67,10 @@ export function createApp(options = {}) {
       const contentType = upstream.headers.get("content-type") ?? "";
       if (contentType.includes("text/html")) {
         const html = await upstream.text();
-        response.status(upstream.status).type("html").send(injectObserverSdk(html));
+        response
+          .status(upstream.status)
+          .type("html")
+          .send(injectObserverSdk(html, { token: await store.getToken() }));
         return;
       }
       const body = Buffer.from(await upstream.arrayBuffer());
@@ -113,7 +134,14 @@ export function createApp(options = {}) {
   app.post("/api/interactions", async (request, response, next) => {
     try {
       const fastEvent = interactionFromPayload(request.body ?? {});
-      const event = await maybeJudgeEvent(fastEvent, { enabled: process.env.FATHOM_JUDGE === "1" });
+      let event = fastEvent;
+      let warning = null;
+      try {
+        event = await judgeEvent(fastEvent);
+      } catch (error) {
+        warning = error instanceof Error ? error.message : String(error);
+        console.warn(`Fathom judge failed: ${warning}`);
+      }
       const origin = canonicalOrigin(event.pageUrl || request.body?.origin || request.body?.before?.url || request.body?.after?.url);
       const stored = await store.appendInteraction(origin, event);
       if (event.after.url) {
@@ -124,7 +152,7 @@ export function createApp(options = {}) {
           discoveredVia: stored.id
         });
       }
-      response.status(201).json({ ok: true, event: stored });
+      response.status(201).json({ ok: true, event: stored, warning });
     } catch (error) {
       next(error);
     }
@@ -150,9 +178,9 @@ export function createApp(options = {}) {
     }
   });
 
-  app.get("/api/poll", async (request, response, next) => {
+  app.post("/api/poll", async (request, response, next) => {
     try {
-      const origin = requireOrigin(request.query.origin);
+      const origin = requireOrigin(request.body?.origin ?? request.query.origin);
       const items = await store.drainQueue(origin);
       response.json({ ok: true, origin: canonicalOrigin(origin), queue: items, empty: items.length === 0 });
     } catch (error) {
@@ -217,6 +245,26 @@ export function createApp(options = {}) {
   });
 
   return app;
+}
+
+function authenticateMutations(store) {
+  return async (request, response, next) => {
+    try {
+      const protectsRoute = MUTATING_ROUTES.some(([method, pattern]) => request.method === method && pattern.test(request.path));
+      if (!protectsRoute) {
+        next();
+        return;
+      }
+      const token = request.get("x-fathom-token");
+      if (!token || token !== (await store.getToken())) {
+        response.status(401).json({ ok: false, error: "x-fathom-token is required" });
+        return;
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 function chromeHtml(origin, target) {

@@ -16,6 +16,7 @@ export function installObserver(options = {}) {
 export function createObserver(win, options = {}) {
   const doc = win.document;
   const endpoint = options.endpoint ?? "/api/interactions";
+  const token = options.token ?? "";
   const settleMs = options.settleMs ?? DEFAULT_SETTLE_MS;
   const beforeSnapshots = new WeakMap();
   const network = createNetworkBuffer(win);
@@ -77,7 +78,7 @@ export function createObserver(win, options = {}) {
         networkCalls,
         consoleErrors: [...consoleErrors]
       };
-      postInteraction(win, endpoint, payload);
+      postInteraction(win, endpoint, payload, token);
     });
   }
 
@@ -86,10 +87,11 @@ export function createObserver(win, options = {}) {
 
 export function captureSnapshot(win, target, networkCalls = [], consoleErrors = []) {
   const region = nearestRegion(win, target) ?? win.document.body;
+  const html = region?.outerHTML ?? "";
   return {
     url: win.location.href,
-    domHash: hashString(region?.outerHTML ?? ""),
-    screenshot: "",
+    domHash: hashString(html),
+    screenshot: snapshotDataUrl(win, region, html),
     pendingNetworkCalls: networkCalls,
     consoleErrors: [...consoleErrors]
   };
@@ -147,6 +149,17 @@ function nearestRegion(win, target) {
   return null;
 }
 
+function snapshotDataUrl(win, region, html) {
+  const rect = typeof region?.getBoundingClientRect === "function" ? region.getBoundingClientRect() : null;
+  const width = Math.max(1, Math.ceil(rect?.width || region?.scrollWidth || 640));
+  const height = Math.max(1, Math.ceil(rect?.height || region?.scrollHeight || 480));
+  const documentElement = win.document?.documentElement;
+  const namespace = documentElement?.getAttribute?.("xmlns") || "http://www.w3.org/1999/xhtml";
+  const body = html || "<body></body>";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%"><div xmlns="${namespace}">${body}</div></foreignObject></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 async function waitForSettle(network, settleMs) {
   const started = Date.now();
   await delay(settleMs);
@@ -155,15 +168,13 @@ async function waitForSettle(network, settleMs) {
   }
 }
 
-function postInteraction(win, endpoint, payload) {
-  if (win.parent && win.parent !== win) {
-    win.parent.postMessage(payload, "*");
-  }
+function postInteraction(win, endpoint, payload, token) {
+  // The chrome UI polls /api/session; avoid a wildcard postMessage channel until a real listener exists.
   if (typeof win.fetch === "function") {
     win
       .fetch(endpoint, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-fathom-token": token },
         body: JSON.stringify(payload),
         keepalive: true
       })

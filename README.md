@@ -1,6 +1,6 @@
 # Fathom
 
-[![CI](https://github.com/kunchenguid/vessel-fathom/actions/workflows/ci.yml/badge.svg)](https://github.com/kunchenguid/vessel-fathom/actions/workflows/ci.yml)
+[![CI](https://github.com/npkriami18/vessel-fathom/actions/workflows/ci.yml/badge.svg)](https://github.com/npkriami18/vessel-fathom/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/vessel-fathom.svg)](https://www.npmjs.com/package/vessel-fathom)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -11,7 +11,7 @@ Fathom is a local-first interaction verification loop for agent-built web apps. 
 Install the agent skill:
 
 ```sh
-npx skills add kunchenguid/vessel-fathom --skill fathom
+npx skills add npkriami18/vessel-fathom --skill fathom
 ```
 
 Or use the CLI without installing anything globally:
@@ -45,7 +45,7 @@ The timeline shows observed interactions. Open notifications can be approved int
 Once this package is published, install the skill with:
 
 ```sh
-npx skills add kunchenguid/vessel-fathom --skill fathom
+npx skills add npkriami18/vessel-fathom --skill fathom
 ```
 
 The published package includes `skills/fathom/SKILL.md`, matching the frontmatter-based structure used by `lavish-axi`.
@@ -62,10 +62,9 @@ When the observer sees a click, submit, or Enter key activation, it compares the
 
 ## LLM Judge
 
-The heuristic classifier runs locally by default. To enable the optional Anthropic-backed judge, set both values before starting the server:
+The heuristic classifier runs locally by default. When an interaction has `data-fathom-expect` and `ANTHROPIC_API_KEY` is set, Fathom also runs the optional Anthropic-backed judge automatically. Set `FATHOM_JUDGE=0` to opt out of LLM calls.
 
 ```sh
-export FATHOM_JUDGE=1
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
 

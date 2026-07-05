@@ -1,3 +1,5 @@
+import { readLocalToken } from "./session-store.js";
+
 const DEFAULT_SERVER = "http://127.0.0.1:4765";
 
 /**
@@ -32,7 +34,11 @@ export async function runCli(argv, io = {}) {
 
     if (command === "poll") {
       requireValue(value, "origin");
-      const response = await request(`${baseUrl}/api/poll?origin=${encodeURIComponent(value)}`);
+      const response = await request(`${baseUrl}/api/poll`, {
+        method: "POST",
+        headers: await authHeaders(env),
+        body: JSON.stringify({ origin: value })
+      });
       await writeJson(out, response);
       return response.ok ? 0 : 1;
     }
@@ -48,7 +54,7 @@ export async function runCli(argv, io = {}) {
       requireValue(value, "origin");
       const response = await request(`${baseUrl}/api/end`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: await authHeaders(env),
         body: JSON.stringify({ origin: value })
       });
       await writeJson(out, response);
@@ -71,7 +77,7 @@ export async function runCli(argv, io = {}) {
       requireValue(value, "origin");
       const response = await request(`${baseUrl}/api/export`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: await authHeaders(env),
         body: JSON.stringify({ origin: value })
       });
       await writeJson(out, response);
@@ -108,6 +114,12 @@ function usage() {
     "  export <origin>",
     "  setup hooks"
   ].join("\n");
+}
+
+/** @param {NodeJS.ProcessEnv} env */
+async function authHeaders(env) {
+  const token = env.FATHOM_TOKEN ?? (await readLocalToken(env.FATHOM_STATE_DIR));
+  return { "content-type": "application/json", "x-fathom-token": token };
 }
 
 /** @param {unknown} value @param {string} name */

@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -51,6 +51,16 @@ export function normalizeSession(input) {
   };
 }
 
+/** @param {string} stateDir */
+export function tokenPathForStateDir(stateDir = DEFAULT_STATE_DIR) {
+  return path.join(stateDir, "token");
+}
+
+/** @param {string} [stateDir] */
+export async function readLocalToken(stateDir = DEFAULT_STATE_DIR) {
+  return (await readFile(tokenPathForStateDir(stateDir), "utf8")).trim();
+}
+
 export class SessionStore {
   /**
    * @param {{ stateDir?: string }} [options]
@@ -58,11 +68,28 @@ export class SessionStore {
   constructor(options = {}) {
     this.stateDir = options.stateDir ?? DEFAULT_STATE_DIR;
     this.sessionsDir = path.join(this.stateDir, "sessions");
+    /** @type {Map<string, Promise<void>>} */
+    this.updateLocks = new Map();
   }
 
   /** @returns {Promise<void>} */
   async ensureReady() {
     await mkdir(this.sessionsDir, { recursive: true });
+  }
+
+  /** @returns {Promise<string>} */
+  async getToken() {
+    await this.ensureReady();
+    try {
+      const existing = await readLocalToken(this.stateDir);
+      if (existing) return existing;
+    } catch (error) {
+      if (!error || typeof error !== "object" || error.code !== "ENOENT") throw error;
+    }
+
+    const token = randomBytes(32).toString("hex");
+    await writeFile(tokenPathForStateDir(this.stateDir), `${token}\n`, { encoding: "utf8", mode: 0o600 });
+    return token;
   }
 
   /**
@@ -111,7 +138,7 @@ export class SessionStore {
     await this.ensureReady();
     const normalized = normalizeSession(session);
     const target = this.sessionPath(normalized.origin);
-    const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;
+    const tmp = `${target}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
     await writeFile(tmp, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
     await rename(tmp, target);
     return normalized;
@@ -119,13 +146,33 @@ export class SessionStore {
 
   /**
    * @param {string} originOrUrl
-   * @param {(session: Session) => void} mutator
+   * @param {(session: Session) => void | unknown} mutator
    * @returns {Promise<Session>}
    */
   async update(originOrUrl, mutator) {
-    const session = await this.getOrCreate(originOrUrl);
-    mutator(session);
-    return this.write(session);
+    const origin = canonicalOrigin(originOrUrl);
+    const prior = this.updateLocks.get(origin) ?? Promise.resolve();
+    let release = () => {};
+    const current = new Promise((resolve) => {
+      release = resolve;
+    });
+    this.updateLocks.set(
+      origin,
+      prior.then(
+        () => current,
+        () => current
+      )
+    );
+
+    await prior.catch(() => {});
+    try {
+      const session = (await this.read(origin)) ?? normalizeSession({ origin });
+      mutator(session);
+      return await this.write(session);
+    } finally {
+      release();
+      if (this.updateLocks.get(origin) === current) this.updateLocks.delete(origin);
+    }
   }
 
   /**
@@ -167,14 +214,14 @@ export class SessionStore {
    * @returns {Promise<Session>}
    */
   async upsertPage(originOrUrl, page) {
-    const session = await this.getOrCreate(originOrUrl);
-    const existingIndex = session.pages.findIndex((candidate) => candidate.url === page.url);
-    if (existingIndex === -1) {
-      session.pages.push(page);
-    } else {
-      session.pages[existingIndex] = { ...session.pages[existingIndex], ...page };
-    }
-    return this.write(session);
+    return this.update(originOrUrl, (session) => {
+      const existingIndex = session.pages.findIndex((candidate) => candidate.url === page.url);
+      if (existingIndex === -1) {
+        session.pages.push(page);
+      } else {
+        session.pages[existingIndex] = { ...session.pages[existingIndex], ...page };
+      }
+    });
   }
 
   /**
@@ -183,15 +230,15 @@ export class SessionStore {
    * @returns {Promise<InteractionEvent>}
    */
   async appendInteraction(originOrUrl, event) {
-    const session = await this.getOrCreate(originOrUrl);
     const interaction = {
       ...event,
       id: event.id ?? randomUUID(),
       timestamp: event.timestamp ?? new Date().toISOString(),
       comments: event.comments ?? []
     };
-    session.timeline.push(interaction);
-    await this.write(session);
+    await this.update(originOrUrl, (session) => {
+      session.timeline.push(interaction);
+    });
     return interaction;
   }
 
@@ -201,7 +248,6 @@ export class SessionStore {
    * @returns {Promise<QueueItem>}
    */
   async enqueue(originOrUrl, item) {
-    const session = await this.getOrCreate(originOrUrl);
     const queueItem = {
       id: item.id ?? randomUUID(),
       sourceEventId: item.sourceEventId ?? null,
@@ -209,8 +255,9 @@ export class SessionStore {
       createdAt: item.createdAt ?? new Date().toISOString(),
       sent: item.sent ?? false
     };
-    session.queue.push(queueItem);
-    await this.write(session);
+    await this.update(originOrUrl, (session) => {
+      session.queue.push(queueItem);
+    });
     return queueItem;
   }
 
@@ -219,13 +266,13 @@ export class SessionStore {
    * @returns {Promise<QueueItem[]>}
    */
   async drainQueue(originOrUrl) {
-    const session = await this.getOrCreate(originOrUrl);
-    const unsent = session.queue.filter((item) => !item.sent);
-    if (unsent.length === 0) return [];
-
-    const sentIds = new Set(unsent.map((item) => item.id));
-    session.queue = session.queue.map((item) => (sentIds.has(item.id) ? { ...item, sent: true } : item));
-    await this.write(session);
+    let unsent = [];
+    await this.update(originOrUrl, (session) => {
+      unsent = session.queue.filter((item) => !item.sent);
+      if (unsent.length === 0) return;
+      const sentIds = new Set(unsent.map((item) => item.id));
+      session.queue = session.queue.map((item) => (sentIds.has(item.id) ? { ...item, sent: true } : item));
+    });
     return unsent;
   }
 }

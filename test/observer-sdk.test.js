@@ -40,7 +40,11 @@ test("element helpers extract selector, label, kind, and declared intent", () =>
 });
 
 test("captureSnapshot hashes the nearest fathom region", () => {
-  const region = new FakeElement("section", { "data-fathom-region": "cart", outerHTML: "<section data-fathom-region='cart'>A</section>" }, "A");
+  const region = new FakeElement(
+    "section",
+    { "data-fathom-region": "cart", outerHTML: "<section data-fathom-region='cart'>A</section>" },
+    "A"
+  );
   const win = {
     Element: FakeElement,
     document: { body: new FakeElement("body", { outerHTML: "<body>ignored</body>" }) },

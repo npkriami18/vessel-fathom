@@ -1,28 +1,65 @@
 {
-    "name":  "vessel-fathom",
-    "version":  "0.1.0",
-    "description":  "Local-first interaction verification for live apps.",
-    "type":  "module",
-    "private":  true,
-    "bin":  {
-                "fathom":  "./bin/fathom.js"
-            },
-    "engines":  {
-                    "node":  "\u003e=22"
-                },
-    "scripts":  {
-                    "build":  "node scripts/build.js",
-                    "lint":  "node scripts/lint.js",
-                    "format:check":  "node scripts/format-check.js",
-                    "typecheck":  "tsc --noEmit",
-                    "test":  "node --test test/*.test.js",
-                    "check":  "node scripts/build.js \u0026\u0026 node scripts/lint.js \u0026\u0026 node scripts/format-check.js \u0026\u0026 tsc --noEmit \u0026\u0026 node --test test/*.test.js"
-                },
-    "devDependencies":  {
-                            "esbuild":  "^0.28.1",
-                            "typescript":  "^5.5.4"
-                        },
-    "dependencies":  {
-                         "express":  "^5.2.1"
-                     }
+  "name": "vessel-fathom",
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.10.0",
+  "description": "Local-first interaction verification for live apps built by AI agents.",
+  "type": "module",
+  "bin": {
+    "fathom": "dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "skills/fathom",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:skill": "node scripts/build-skill.js",
+    "check": "npm run build && npm run lint && npm run format:check && npm run typecheck && npm test && node scripts/build-skill.js --check",
+    "start": "node dist/cli.mjs",
+    "lint": "eslint bin src test scripts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepack": "npm run build",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.2",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "agent",
+    "cli",
+    "verification",
+    "testing",
+    "review",
+    "interaction",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kunchenguid/vessel-fathom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kunchenguid/vessel-fathom/issues"
+  },
+  "homepage": "https://github.com/kunchenguid/vessel-fathom#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

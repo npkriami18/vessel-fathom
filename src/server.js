@@ -12,6 +12,7 @@ import { maybeJudgeEvent } from "./judge.js";
 import { canonicalOrigin, SessionStore } from "./session-store.js";
 
 const DEFAULT_PORT = 4765;
+const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const ROOT_DIR = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 /**
@@ -62,7 +63,7 @@ export function createApp(options = {}) {
 
   app.get("/chrome-client.js", async (_request, response, next) => {
     try {
-      response.type("application/javascript").send(await readFile(path.join(ROOT_DIR, "src", "chrome-client.js"), "utf8"));
+      response.type("application/javascript").send(await readAsset("chrome-client.js", path.join("src", "chrome-client.js")));
     } catch (error) {
       next(error);
     }
@@ -70,7 +71,7 @@ export function createApp(options = {}) {
 
   app.get("/chrome.css", async (_request, response, next) => {
     try {
-      response.type("text/css").send(await readFile(path.join(ROOT_DIR, "src", "chrome.css"), "utf8"));
+      response.type("text/css").send(await readAsset("chrome.css", path.join("src", "chrome.css")));
     } catch (error) {
       next(error);
     }
@@ -89,7 +90,11 @@ export function createApp(options = {}) {
         });
       }
       const refreshed = await store.read(session.origin);
-      response.status(201).json({ ok: true, session: refreshed, chromeUrl: `/chrome?origin=${encodeURIComponent(session.origin)}&url=${encodeURIComponent(url)}` });
+      response.status(201).json({
+        ok: true,
+        session: refreshed,
+        chromeUrl: `/chrome?origin=${encodeURIComponent(session.origin)}&url=${encodeURIComponent(url)}`
+      });
     } catch (error) {
       next(error);
     }
@@ -186,7 +191,6 @@ export function createApp(options = {}) {
     }
   });
 
-
   app.post("/api/export", async (request, response, next) => {
     try {
       const origin = requireOrigin(request.body?.origin ?? request.query.origin);
@@ -253,40 +257,71 @@ function requireOrigin(value) {
 
 /** @param {string} value */
 function escapeHtml(value) {
-  return value.replaceAll("&", "&amp;").replaceAll("\"", "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 /**
- * @param {{ port?: number, store?: SessionStore }} [options]
- * @returns {Promise<{ port: number, close: () => Promise<void> }>}
+ * @param {string} distName
+ * @param {string} sourceRelativePath
  */
-async function readObserverSdk() {
+async function readAsset(distName, sourceRelativePath) {
   try {
-    return await readFile(path.join(ROOT_DIR, "dist", "observer-sdk.js"), "utf8");
+    return await readFile(path.join(ROOT_DIR, "dist", distName), "utf8");
   } catch (error) {
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return readFile(path.join(ROOT_DIR, "src", "browser", "observer-sdk.js"), "utf8");
+      return readFile(path.join(ROOT_DIR, sourceRelativePath), "utf8");
     }
     throw error;
   }
 }
+
+async function readObserverSdk() {
+  return readAsset("observer-sdk.js", path.join("src", "browser", "observer-sdk.js"));
+}
+
+/**
+ * @param {{ port?: number, store?: SessionStore, idleTimeoutMs?: number }} [options]
+ * @returns {Promise<{ port: number, close: () => Promise<void> }>}
+ */
 export async function startServer(options = {}) {
   const app = createApp({ store: options.store });
   const port = options.port ?? DEFAULT_PORT;
   const server = createHttpServer(app);
+  const idleTimeoutMs = options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
+  let idleTimer = null;
+
+  function clearIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+
+  function armIdleTimer() {
+    clearIdleTimer();
+    if (idleTimeoutMs <= 0) return;
+    idleTimer = setTimeout(() => {
+      server.close(() => {});
+    }, idleTimeoutMs);
+    idleTimer.unref?.();
+  }
+
+  server.on("request", armIdleTimer);
 
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, "127.0.0.1", () => resolve(undefined));
   });
 
+  armIdleTimer();
+
   const address = server.address();
   const actualPort = typeof address === "object" && address ? address.port : port;
 
   return {
     port: actualPort,
-    close: () => new Promise((resolve, reject) => {
-      server.close((error) => error ? reject(error) : resolve());
-    })
+    close: () =>
+      new Promise((resolve, reject) => {
+        clearIdleTimer();
+        server.close((error) => (error ? reject(error) : resolve()));
+      })
   };
 }

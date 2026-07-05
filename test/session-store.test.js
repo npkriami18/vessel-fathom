@@ -68,7 +68,10 @@ test("upsertPage records discovered pages without duplicating URLs", async () =>
 
 test("appendInteraction stores timeline entries with generated metadata", async () => {
   const store = await tempStore();
-  const event = await store.appendInteraction("http://localhost:3000", interaction({ id: undefined, timestamp: undefined, comments: undefined }));
+  const event = await store.appendInteraction(
+    "http://localhost:3000",
+    interaction({ id: undefined, timestamp: undefined, comments: undefined })
+  );
   const session = await store.read("http://localhost:3000");
 
   assert.ok(event.id);

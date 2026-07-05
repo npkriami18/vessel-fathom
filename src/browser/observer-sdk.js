@@ -107,14 +107,17 @@ export function hashString(value) {
 export function selectorFor(element) {
   if (element.id) return `#${cssEscape(element.id)}`;
   const testId = element.getAttribute("data-testid");
-  if (testId) return `[data-testid=\"${cssEscape(testId)}\"]`;
+  if (testId) return `[data-testid="${cssEscape(testId)}"]`;
   const name = element.getAttribute("name");
-  if (name) return `${element.tagName.toLowerCase()}[name=\"${cssEscape(name)}\"]`;
+  if (name) return `${element.tagName.toLowerCase()}[name="${cssEscape(name)}"]`;
   return element.tagName.toLowerCase();
 }
 
 export function labelFor(element) {
-  return (element.getAttribute("aria-label") || element.textContent || element.getAttribute("value") || "").trim().replace(/\s+/g, " ").slice(0, 120);
+  return (element.getAttribute("aria-label") || element.textContent || element.getAttribute("value") || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
 }
 
 export function declaredIntentFor(element) {
@@ -157,12 +160,14 @@ function postInteraction(win, endpoint, payload) {
     win.parent.postMessage(payload, "*");
   }
   if (typeof win.fetch === "function") {
-    win.fetch(endpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true
-    }).catch(() => {});
+    win
+      .fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true
+      })
+      .catch(() => {});
   }
 }
 
@@ -202,7 +207,9 @@ function createNetworkBuffer(win) {
             url = String(nextUrl);
             return originalOpen.call(xhr, nextMethod, nextUrl, ...rest);
           };
-          xhr.addEventListener("loadstart", () => { inFlight += 1; });
+          xhr.addEventListener("loadstart", () => {
+            inFlight += 1;
+          });
           xhr.addEventListener("loadend", () => {
             inFlight -= 1;
             calls.push({ type: "xhr", method, url, status: xhr.status, endedAt: new Date().toISOString() });

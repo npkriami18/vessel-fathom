@@ -224,7 +224,7 @@ export class SessionStore {
     if (unsent.length === 0) return [];
 
     const sentIds = new Set(unsent.map((item) => item.id));
-    session.queue = session.queue.map((item) => sentIds.has(item.id) ? { ...item, sent: true } : item);
+    session.queue = session.queue.map((item) => (sentIds.has(item.id) ? { ...item, sent: true } : item));
     await this.write(session);
     return unsent;
   }

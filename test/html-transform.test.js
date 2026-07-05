@@ -17,7 +17,9 @@ test("injectObserverSdk is idempotent", () => {
 });
 
 test("stripFathomInstrumentation removes SDK script and fathom attributes", () => {
-  const stripped = stripFathomInstrumentation('<button data-fathom-expect="works" data-lavish-region="x">Go</button><script data-fathom-sdk="true" type="module">x</script>');
+  const stripped = stripFathomInstrumentation(
+    '<button data-fathom-expect="works" data-lavish-region="x">Go</button><script data-fathom-sdk="true" type="module">x</script>'
+  );
 
   assert.equal(stripped, "<button>Go</button>");
 });

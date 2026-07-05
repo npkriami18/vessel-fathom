@@ -1,5 +1,3 @@
-import { spawn } from "node:child_process";
-
 const DEFAULT_SERVER = "http://127.0.0.1:4765";
 
 /**
@@ -8,7 +6,7 @@ const DEFAULT_SERVER = "http://127.0.0.1:4765";
  * @returns {Promise<number>}
  */
 export async function runCli(argv, io = {}) {
-  const [command, value, subcommand] = argv;
+  const [command, value] = argv;
   const out = io.stdout ?? process.stdout;
   const err = io.stderr ?? process.stderr;
   const request = io.fetch ?? fetch;

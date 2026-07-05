@@ -19,7 +19,7 @@ async function fixtureServer() {
   return {
     store,
     baseUrl: `http://127.0.0.1:${address.port}`,
-    close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+    close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
   };
 }
 

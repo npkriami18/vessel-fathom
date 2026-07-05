@@ -88,21 +88,26 @@ export function parseJudgment(text) {
 export async function maybeJudgeEvent(event, options = {}) {
   if (!options.enabled || !event.declaredIntent) return event;
 
-  const judgment = await judgeInteraction({
-    declaredIntent: event.declaredIntent,
-    outcome: event.outcome,
-    domSubtreeDiff: event.after.domSubtreeDiff,
-    networkCalls: event.after.pendingNetworkCalls
-  }, options);
+  const judgment = await judgeInteraction(
+    {
+      declaredIntent: event.declaredIntent,
+      outcome: event.outcome,
+      domSubtreeDiff: event.after.domSubtreeDiff,
+      networkCalls: event.after.pendingNetworkCalls
+    },
+    options
+  );
 
   return {
     ...event,
     judgment,
-    notification: event.notification ?? scoreNotification({
-      declaredIntent: event.declaredIntent,
-      outcome: event.outcome,
-      judgment,
-      elementKind: null
-    })
+    notification:
+      event.notification ??
+      scoreNotification({
+        declaredIntent: event.declaredIntent,
+        outcome: event.outcome,
+        judgment,
+        elementKind: null
+      })
   };
 }

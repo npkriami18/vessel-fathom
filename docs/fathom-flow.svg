@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Fathom review chrome</title>
+  <desc id="desc">A stylized screenshot showing an app frame, Fathom timeline, and approve or dismiss notification controls.</desc>
+  <rect width="1200" height="675" fill="#f4f6f8"/>
+  <rect x="42" y="42" width="1116" height="591" rx="10" fill="#ffffff" stroke="#cfd8e3"/>
+  <rect x="42" y="42" width="1116" height="44" rx="10" fill="#20242c"/>
+  <circle cx="70" cy="64" r="6" fill="#ff6b6b"/>
+  <circle cx="91" cy="64" r="6" fill="#ffd166"/>
+  <circle cx="112" cy="64" r="6" fill="#58d68d"/>
+  <text x="154" y="69" fill="#d8dee9" font-family="Inter, Segoe UI, sans-serif" font-size="15">Fathom review session: http://localhost:3000</text>
+  <rect x="70" y="115" width="690" height="470" rx="8" fill="#fbfcfd" stroke="#d8e0ea"/>
+  <text x="104" y="165" fill="#121721" font-family="Inter, Segoe UI, sans-serif" font-size="30" font-weight="700">Checkout</text>
+  <text x="104" y="205" fill="#52606d" font-family="Inter, Segoe UI, sans-serif" font-size="18">Button declares: navigates to /confirm</text>
+  <rect x="104" y="250" width="210" height="56" rx="7" fill="#246bfe"/>
+  <text x="143" y="285" fill="#ffffff" font-family="Inter, Segoe UI, sans-serif" font-size="18" font-weight="700">Checkout</text>
+  <rect x="815" y="115" width="300" height="470" rx="8" fill="#ffffff" stroke="#d8e0ea"/>
+  <text x="843" y="154" fill="#121721" font-family="Inter, Segoe UI, sans-serif" font-size="24" font-weight="700">Fathom</text>
+  <rect x="843" y="180" width="88" height="34" rx="17" fill="#20242c"/>
+  <text x="863" y="202" fill="#ffffff" font-family="Inter, Segoe UI, sans-serif" font-size="13">Notify</text>
+  <rect x="942" y="180" width="84" height="34" rx="17" fill="#eef2f6"/>
+  <text x="963" y="202" fill="#344054" font-family="Inter, Segoe UI, sans-serif" font-size="13">Timeline</text>
+  <rect x="843" y="246" width="244" height="122" rx="8" fill="#fff7ed" stroke="#f2b267"/>
+  <text x="865" y="279" fill="#7a3e00" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700">High notification</text>
+  <text x="865" y="307" fill="#53310a" font-family="Inter, Segoe UI, sans-serif" font-size="14">Expected navigation, observed no change.</text>
+  <rect x="865" y="326" width="94" height="30" rx="6" fill="#176c3a"/>
+  <text x="885" y="346" fill="#ffffff" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700">Approve</text>
+  <rect x="970" y="326" width="84" height="30" rx="6" fill="#eef2f6"/>
+  <text x="989" y="346" fill="#344054" font-family="Inter, Segoe UI, sans-serif" font-size="13" font-weight="700">Dismiss</text>
+  <rect x="843" y="398" width="244" height="88" rx="8" fill="#f8fafc" stroke="#d8e0ea"/>
+  <text x="865" y="429" fill="#121721" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700">Agent queue</text>
+  <text x="865" y="457" fill="#52606d" font-family="Inter, Segoe UI, sans-serif" font-size="14">1 approved item ready for poll</text>
+</svg>
+

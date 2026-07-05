@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Fathom Toy App - Cart</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-  <main data-fathom-region="cart">
-    <h1>Cart</h1>
-    <span id="cart-badge">2</span>
-    <button id="checkout" data-fathom-expect="navigates to /confirm and clears cart badge">Checkout</button>
-    <button id="broken-save" data-fathom-expect="shows saved confirmation">Save cart</button>
-    <a id="details" href="/details" data-fathom-expect="navigates to /details">Details</a>
-  </main>
-  <script src="/toy-app.client.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Fathom Toy App - Cart</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main data-fathom-region="cart">
+      <h1>Cart</h1>
+      <span id="cart-badge">2</span>
+      <button id="checkout" data-fathom-expect="navigates to /confirm and clears cart badge">Checkout</button>
+      <button id="broken-save" data-fathom-expect="shows saved confirmation">Save cart</button>
+      <a id="details" href="/details" data-fathom-expect="navigates to /details">Details</a>
+    </main>
+    <script src="/toy-app.client.js"></script>
+  </body>
 </html>

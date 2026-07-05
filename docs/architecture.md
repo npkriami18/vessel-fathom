@@ -15,6 +15,7 @@ likely problems instead of hunting through the whole app for bugs.
 ## 2. Goals / Non-goals
 
 **Goals**
+
 - Work across multi-page apps and SPAs, not just a single static file.
 - Let elements declare an expected effect inline, without a separate manifest
   file that can drift out of sync.
@@ -28,6 +29,7 @@ likely problems instead of hunting through the whole app for bugs.
   away, or after a modal auto-closed).
 
 **Non-goals (v1)**
+
 - No automated clicking/scripting of the app (human-driven only).
 - No cross-browser test replay engine (that's a natural v2, not v1).
 - No requirement that every element have a declared intent — the system
@@ -68,6 +70,7 @@ origin** instead of per file path, since the human will move across pages.
 ## 4. Data model
 
 ### 4.1 Session
+
 ```ts
 Session {
   id: string                 // hash of app origin, e.g. localhost:3000
@@ -80,6 +83,7 @@ Session {
 ```
 
 ### 4.2 PageNode
+
 ```ts
 PageNode {
   url: string
@@ -88,11 +92,13 @@ PageNode {
   discoveredVia?: interactionEventId   // which click led here, if any
 }
 ```
+
 The page graph is just a byproduct: an edge from `discoveredVia` to this node.
 Not load-bearing for v1, but cheap to keep and useful as documentation of the
 app's navigable surface.
 
 ### 4.3 InteractionEvent (the core unit — the "timeline entry")
+
 ```ts
 InteractionEvent {
   id: string
@@ -114,6 +120,7 @@ InteractionEvent {
 ```
 
 ### 4.4 Snapshot
+
 ```ts
 Snapshot {
   url: string
@@ -126,16 +133,13 @@ Snapshot {
 ```
 
 ### 4.5 Outcome (auto-classified, no LLM needed)
+
 ```ts
-type Outcome =
-  | "no_change"
-  | "navigation"
-  | "dom_mutation"
-  | "network_call"
-  | "combination"   // e.g. dom_mutation + network_call
+type Outcome = "no_change" | "navigation" | "dom_mutation" | "network_call" | "combination"; // e.g. dom_mutation + network_call
 ```
 
 ### 4.6 Judgment (only computed when declaredIntent is present)
+
 ```ts
 Judgment {
   verdict: "match" | "mismatch" | "partial" | "unclear"
@@ -145,6 +149,7 @@ Judgment {
 ```
 
 ### 4.7 NotificationFlag
+
 ```ts
 NotificationFlag {
   severity: "high" | "likely" | "info"
@@ -154,6 +159,7 @@ NotificationFlag {
 ```
 
 ### 4.8 QueueItem (feeds into the existing send-to-agent mechanism)
+
 ```ts
 QueueItem {
   id: string
@@ -176,7 +182,7 @@ interaction:
   "elementLabel": "Checkout",
   "declaredIntent": "navigates to /confirm and clears cart badge",
   "before": { "domHash": "a1b2...", "url": "/cart", "screenshot": "..." },
-  "after":  { "domHash": "a1b2...", "url": "/cart", "screenshot": "..." },
+  "after": { "domHash": "a1b2...", "url": "/cart", "screenshot": "..." },
   "networkCalls": [],
   "consoleErrors": []
 }
@@ -245,7 +251,7 @@ in-flight) before capturing `after` and posting the full event.
 - **LLM judge cost**: batch judgments per session rather than per click, to
   keep latency and cost down, at the expense of instant feedback.
 - **Cross-page timeline continuity**: when the human navigates via a link
-  that's *not* the flagged interaction (e.g. browser back button), how much
+  that's _not_ the flagged interaction (e.g. browser back button), how much
   do we bother reconciling the page graph vs. just letting it be approximate.
 
 ## 10. Suggested build order (v1 prototype)

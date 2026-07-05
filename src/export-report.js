@@ -15,7 +15,10 @@ export async function exportReport(session, options = {}) {
   const dir = options.dir ?? DEFAULT_REPORT_DIR;
   await mkdir(dir, { recursive: true });
   const stamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
-  const safeOrigin = canonicalOrigin(session.origin).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+  const safeOrigin = canonicalOrigin(session.origin)
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
   const base = `${safeOrigin}-${stamp}`;
   const jsonPath = path.join(dir, `${base}.json`);
   const htmlPath = path.join(dir, `${base}.html`);

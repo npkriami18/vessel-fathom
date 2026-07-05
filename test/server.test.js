@@ -19,7 +19,7 @@ async function fixtureServer() {
   return {
     store,
     baseUrl: `http://127.0.0.1:${address.port}`,
-    close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+    close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
   };
 }
 
@@ -166,7 +166,9 @@ test("notification approve queues a comment and dismiss removes it from notify",
 test("chrome route and assets are served", async () => {
   const fixture = await fixtureServer();
   try {
-    const chrome = await fetch(`${fixture.baseUrl}/chrome?origin=${encodeURIComponent("http://localhost:3000")}&url=${encodeURIComponent("http://localhost:3000/cart")}`);
+    const chrome = await fetch(
+      `${fixture.baseUrl}/chrome?origin=${encodeURIComponent("http://localhost:3000")}&url=${encodeURIComponent("http://localhost:3000/cart")}`
+    );
     const css = await fetch(`${fixture.baseUrl}/chrome.css`);
     const js = await fetch(`${fixture.baseUrl}/chrome-client.js`);
 
@@ -215,7 +217,7 @@ test("proxy injects observer SDK into upstream HTML", async () => {
     assert.match(html, /\/observer-sdk\.js/);
   } finally {
     await fixture.close();
-    await new Promise((resolve, reject) => upstream.close((error) => error ? reject(error) : resolve()));
+    await new Promise((resolve, reject) => upstream.close((error) => (error ? reject(error) : resolve())));
   }
 });
 

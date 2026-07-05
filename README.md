@@ -1,55 +1,94 @@
-# vessel-fathom
+# Fathom
 
-Fathom is a local-first CLI for observing live app interactions and sending approved human feedback back to an agent harness.
+[![CI](https://github.com/kunchenguid/vessel-fathom/actions/workflows/ci.yml/badge.svg)](https://github.com/kunchenguid/vessel-fathom/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/vessel-fathom.svg)](https://www.npmjs.com/package/vessel-fathom)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Local use
+Fathom is a local-first interaction verification loop for agent-built web apps. It is the sibling next step to `lavish-axi`: after an agent can show rich UI work for review, Fathom watches the real browser for dead buttons, silent wrong behavior, console errors, and mismatches against `data-fathom-expect` so approved human feedback can flow back to the agent with evidence.
 
-```powershell
-corepack pnpm install
-corepack pnpm run build
-node .\bin\fathom.js server 4765
+## Quickstart
+
+Install the agent skill:
+
+```sh
+npx skills add kunchenguid/vessel-fathom --skill fathom
 ```
 
-In another terminal, start your app and open a Fathom session:
+Or use the CLI without installing anything globally:
 
-```powershell
-node .\bin\fathom.js open http://localhost:3000
+```sh
+npx vessel-fathom open http://localhost:3000
 ```
 
-Open the returned `chromeUrl`, click around the app, then inspect feedback:
+The app must already be running. Fathom starts a localhost review chrome, proxies the app page, injects the observer SDK, and records interaction evidence under `~/.fathom/`.
 
-```powershell
-node .\bin\fathom.js notify http://localhost:3000
-node .\bin\fathom.js poll http://localhost:3000
+## Visual Tour
+
+![Fathom timeline and approve/dismiss flow](docs/fathom-flow.svg)
+
+The timeline shows observed interactions. Open notifications can be approved into the agent queue or dismissed as not actionable. `notify` inspects open notifications; `poll` drains approved feedback for the agent.
+
+## CLI Reference
+
+| Command                  | Purpose                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| `fathom open <url>`      | Create or resume a review session for a live app URL.           |
+| `fathom notify <origin>` | List open notifications without consuming approved queue items. |
+| `fathom poll <origin>`   | Drain approved human feedback for the agent.                    |
+| `fathom end <origin>`    | Mark the review session finished.                               |
+| `fathom export <origin>` | Write JSON and HTML reports under `~/.fathom/reports`.          |
+| `fathom setup hooks`     | Install reusable harness prompts under `~/.fathom/hooks`.       |
+| `fathom server [port]`   | Run the localhost Fathom server directly.                       |
+
+## Agent Skill
+
+Once this package is published, install the skill with:
+
+```sh
+npx skills add kunchenguid/vessel-fathom --skill fathom
 ```
 
-## `/fathom` harness command
+The published package includes `skills/fathom/SKILL.md`, matching the frontmatter-based structure used by `lavish-axi`.
 
-Generate reusable command prompts:
+## Expectations
 
-```powershell
-node .\bin\fathom.js setup hooks
+Annotate important controls with `data-fathom-expect` to tell Fathom what should happen after an interaction:
+
+```html
+<button id="checkout" data-fathom-expect="navigates to /confirm and shows the order confirmation">Checkout</button>
 ```
 
-This writes files under `~/.fathom/hooks`, including:
+When the observer sees a click, submit, or Enter key activation, it compares the declared expectation with browser evidence such as navigation, DOM mutation, network activity, and console errors. Set `data-fathom-region` on a nearby container to scope DOM hashing to the part of the page that matters.
 
-```text
-~/.fathom/hooks/fathom.md
-~/.fathom/hooks/claude/commands/fathom.md
-~/.fathom/hooks/codex/fathom.md
-~/.fathom/hooks/opencode/fathom.md
+## LLM Judge
+
+The heuristic classifier runs locally by default. To enable the optional Anthropic-backed judge, set both values before starting the server:
+
+```sh
+export FATHOM_JUDGE=1
+export ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-For Claude Code project slash-command usage, copy or symlink:
+No API key is hardcoded or read from the repository.
 
-```text
-~/.fathom/hooks/claude/commands/fathom.md
+## Privacy and Safety
+
+Fathom binds to `127.0.0.1` by default. Session state is stored locally under `~/.fathom/`, and the server auto-shuts down after an idle period when started through the CLI server path.
+
+Exported reports may contain screenshots or other captured app data. Check report contents before sharing them publicly.
+
+Fathom does not collect telemetry.
+
+## Development
+
+```sh
+corepack enable
+pnpm install
+pnpm run check
 ```
 
-to your project as:
+Published packages ship only `dist`, `skills/fathom`, `LICENSE`, and `README.md`; source, tests, and docs are intentionally excluded from the npm tarball.
 
-```text
-.claude/commands/fathom.md
-```
+## License
 
-Then use `/fathom` in Claude Code. For other harnesses, import or copy `~/.fathom/hooks/fathom.md` into that harness's custom command/prompt mechanism.
+MIT
